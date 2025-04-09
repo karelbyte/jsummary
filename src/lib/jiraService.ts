@@ -20,8 +20,34 @@ interface JiraIssue {
   };
 }
 
-export async function getJiraTickets(): Promise<Ticket[]> {
-  const jql = 'project = "ABIPP" AND assignee = currentUser() AND status != Done ORDER BY priority DESC';
+interface JiraProject {
+  id: string;
+  key: string;
+  name: string;
+  projectTypeKey: string;
+}
+
+export async function getJiraProjects(): Promise<JiraProject[]> {
+  try {
+    const response = await axios.get(`${jiraBaseUrl}/rest/api/3/project`, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${jiraEmail}:${jiraApiToken}`).toString('base64')}`,
+        Accept: 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener proyectos de Jira:', error);
+    return [];
+  }
+}
+
+export async function getJiraTickets(projectKey?: string): Promise<Ticket[]> {
+  if (!projectKey) {
+    return [];
+  }
+
+  const jql = `project = "${projectKey}" AND assignee = currentUser() AND status != Done ORDER BY priority DESC`;
   const response = await axios.get(`${jiraBaseUrl}/rest/api/3/search?jql=${encodeURIComponent(jql)}`, {
     headers: {
       Authorization: `Basic ${Buffer.from(`${jiraEmail}:${jiraApiToken}`).toString('base64')}`,
@@ -34,7 +60,7 @@ export async function getJiraTickets(): Promise<Ticket[]> {
     summary: issue.fields.summary,
     status: issue.fields.status.name,
     priority: issue.fields.priority?.name || 'Sin prioridad',
-    resumen: issue.fields.description || '',
+    resumen: issue.fields.description || 'Sin descripción',
   }));
 }
 
@@ -111,4 +137,8 @@ export async function resumirTicketsOpenIA(tickets: Ticket[]): Promise<Ticket[]>
   );
 
   return resúmenes;
+}
+
+export async function resumirTickets(tickets: Ticket[]): Promise<Ticket[]> {
+  return tickets;
 } 
