@@ -27,6 +27,32 @@ interface JiraProject {
   projectTypeKey: string;
 }
 
+interface JiraUser {
+  self: string;
+  accountId: string;
+  accountType: string;
+  emailAddress: string;
+  avatarUrls: {
+    '48x48': string;
+    '24x24': string;
+    '16x16': string;
+    '32x32': string;
+  };
+  displayName: string;
+  active: boolean;
+  timeZone: string;
+  locale: string;
+  groups: {
+    size: number;
+    items: any[];
+  };
+  applicationRoles: {
+    size: number;
+    items: any[];
+  };
+  expand: string;
+}
+
 export async function getJiraProjects(): Promise<JiraProject[]> {
   try {
     const response = await axios.get(`${jiraBaseUrl}/rest/api/3/project`, {
@@ -141,4 +167,19 @@ export async function resumirTicketsOpenIA(tickets: Ticket[]): Promise<Ticket[]>
 
 export async function resumirTickets(tickets: Ticket[]): Promise<Ticket[]> {
   return tickets;
+}
+
+export async function getCurrentUser(): Promise<JiraUser | null> {
+  try {
+    const response = await axios.get(`${jiraBaseUrl}/rest/api/3/myself`, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${jiraEmail}:${jiraApiToken}`).toString('base64')}`,
+        Accept: 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener el usuario actual de Jira:', error);
+    return null;
+  }
 } 

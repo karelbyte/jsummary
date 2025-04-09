@@ -13,12 +13,39 @@ interface Project {
   projectTypeKey: string;
 }
 
+interface JiraUser {
+  self: string;
+  accountId: string;
+  accountType: string;
+  emailAddress: string;
+  avatarUrls: {
+    '48x48': string;
+    '24x24': string;
+    '16x16': string;
+    '32x32': string;
+  };
+  displayName: string;
+  active: boolean;
+  timeZone: string;
+  locale: string;
+  groups: {
+    size: number;
+    items: any[];
+  };
+  applicationRoles: {
+    size: number;
+    items: any[];
+  };
+  expand: string;
+}
+
 export default function Home() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [currentUser, setCurrentUser] = useState<JiraUser | null>(null);
 
   const projectOptions = useMemo(() => 
     projects.map(project => ({
@@ -30,6 +57,7 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+    fetchCurrentUser();
   }, []);
 
   const fetchProjects = async () => {
@@ -56,6 +84,16 @@ export default function Home() {
     setLoading(false);
   };
 
+  const fetchCurrentUser = async () => {
+    try {
+      const userRes = await fetch('/api/user');
+      const userData = await userRes.json();
+      setCurrentUser(userData);
+    } catch (error) {
+      console.error('Error al cargar el usuario actual:', error);
+    }
+  };
+
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -74,7 +112,21 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black text-white p-6">
-      <h1 className="text-2xl font-bold mb-4">🧠 IA Resumen de Tickets Jira </h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">🧠 IA Resumen de Tickets Jira</h1>
+        {currentUser && (
+          <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <img
+              src={currentUser.avatarUrls['32x32']}
+              alt={currentUser.displayName}
+              width={32}
+              height={32}
+              className="rounded-full"
+            />
+            <span className="font-medium">{currentUser.displayName}</span>
+          </div>
+        )}
+      </div>
       
       <div className="mb-6">
         <CustomSelect
